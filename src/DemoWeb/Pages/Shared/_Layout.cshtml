@@ -1,0 +1,39 @@
+@{
+    var user = Context.Session.GetString(DemoWeb.Pages.LoginModel.SessionKey);
+}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - Demo Web</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav aria-label="Navigasi utama">
+            <a class="brand" href="/">Demo Web</a>
+            <a href="/">Beranda</a>
+            <a href="/Calculator">Kalkulator</a>
+            <a href="/Todo">Todo</a>
+            <a href="/Lambat">Lambat</a>
+            <span class="spacer"></span>
+            @if (user is null)
+            {
+                <a href="/Login">Masuk</a>
+            }
+            else
+            {
+                <span data-testid="current-user">Halo, @user</span>
+                <form method="post" asp-page="/Login" asp-page-handler="Logout" class="inline">
+                    <button type="submit" class="link">Keluar</button>
+                </form>
+            }
+        </nav>
+    </header>
+    <main>
+        @RenderBody()
+    </main>
+    <footer>Demo aplikasi ASP.NET Core untuk pengujian dengan Playwright</footer>
+</body>
+</html>

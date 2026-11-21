@@ -1,0 +1,35 @@
+@page
+@model CalculatorModel
+@{
+    ViewData["Title"] = "Kalkulator";
+    var ops = new[] { ("+", "Tambah (+)"), ("-", "Kurang (−)"), ("*", "Kali (×)"), ("/", "Bagi (÷)") };
+}
+
+<h1>Kalkulator</h1>
+
+<form method="post" class="form">
+    <label for="a">Angka pertama</label>
+    <input id="a" name="A" type="number" step="any" value="@Model.A?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+    <label for="operator">Operator</label>
+    <select id="operator" name="Operator">
+        @foreach (var (value, text) in ops)
+        {
+            <option value="@value" selected="@(Model.Operator == value)">@text</option>
+        }
+    </select>
+
+    <label for="b">Angka kedua</label>
+    <input id="b" name="B" type="number" step="any" value="@Model.B?.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+
+    <button type="submit">Hitung</button>
+</form>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert error" role="alert" data-testid="calc-error">@Model.ErrorMessage</div>
+}
+@if (Model.Result is not null)
+{
+    <div class="alert success">Hasil: <strong data-testid="calc-result">@Model.Result</strong></div>
+}

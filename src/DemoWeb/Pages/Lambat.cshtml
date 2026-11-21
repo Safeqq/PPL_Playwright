@@ -1,0 +1,43 @@
+@page
+@{
+    ViewData["Title"] = "Halaman Lambat";
+}
+
+@* Halaman ini sengaja dibuat "lambat" untuk mendemokan AUTO-WAITING Playwright.
+   Semua jeda bisa diatur lewat query string, contoh: /Lambat?jeda=3000 *@
+
+<h1>Halaman Lambat</h1>
+<p class="hint">Setiap bagian di halaman ini baru siap setelah beberapa detik, seperti aplikasi web sungguhan yang menunggu server.</p>
+
+<section class="box">
+    <h2>1. Data dari server</h2>
+    <p>Klik tombol, server butuh ±2 detik untuk mengirim data.</p>
+    <button id="muat" type="button">Muat Produk</button>
+    <p id="loading" class="hint" hidden>Memuat...</p>
+    <ul id="produk" data-testid="produk-list"></ul>
+</section>
+
+<section class="box">
+    <h2>2. Tombol yang aktif belakangan</h2>
+    <p>Tombol di bawah baru bisa diklik ±2 detik setelah halaman dibuka.</p>
+    <button id="kirim" type="button" disabled>Kirim</button>
+    <span id="status-kirim" data-testid="status-kirim"></span>
+</section>
+
+<script>
+    const jeda = Number(new URLSearchParams(location.search).get("jeda") ?? 2000);
+    const $ = id => document.getElementById(id);
+
+    // 1. Ambil data dari endpoint yang sengaja diperlambat di server
+    $("muat").addEventListener("click", async () => {
+        $("loading").hidden = false;
+        const res = await fetch(`/api/produk?jeda=${jeda}`);
+        const data = await res.json();
+        $("loading").hidden = true;
+        $("produk").innerHTML = data.map(p => `<li>${p}</li>`).join("");
+    });
+
+    // 2. Tombol Kirim baru aktif setelah jeda
+    setTimeout(() => $("kirim").disabled = false, jeda);
+    $("kirim").addEventListener("click", () => $("status-kirim").textContent = "Terkirim!");
+</script>

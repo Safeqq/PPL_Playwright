@@ -1,0 +1,26 @@
+@page
+@{
+    ViewData["Title"] = "Beranda";
+}
+
+<h1>Selamat Datang di Demo Web</h1>
+<p>Aplikasi sederhana ini dibuat untuk mendemokan pengujian otomatis menggunakan <strong>Playwright</strong>.</p>
+
+<div class="cards">
+    <a class="card" href="/Login" data-testid="card-login">
+        <h2>Login</h2>
+        <p>Form login dengan validasi username dan password.</p>
+    </a>
+    <a class="card" href="/Calculator" data-testid="card-calculator">
+        <h2>Kalkulator</h2>
+        <p>Operasi tambah, kurang, kali, dan bagi.</p>
+    </a>
+    <a class="card" href="/Todo" data-testid="card-todo">
+        <h2>Todo List</h2>
+        <p>Tambah, selesaikan, dan hapus tugas (perlu login).</p>
+    </a>
+    <a class="card" href="/Lambat" data-testid="card-lambat">
+        <h2>Halaman Lambat</h2>
+        <p>Elemen yang muncul terlambat, untuk demo auto-waiting.</p>
+    </a>
+</div>

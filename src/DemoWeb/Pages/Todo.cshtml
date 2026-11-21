@@ -1,0 +1,43 @@
+@page
+@model TodoModel
+@{
+    ViewData["Title"] = "Todo";
+}
+
+<h1>Todo List</h1>
+
+<form method="post" asp-page-handler="Add" class="form row">
+    <label for="new-title" class="sr-only">Tugas baru</label>
+    <input id="new-title" name="NewTitle" placeholder="Apa yang perlu dikerjakan?" />
+    <button type="submit">Tambah</button>
+</form>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert error" role="alert" data-testid="todo-error">@Model.ErrorMessage</div>
+}
+
+@if (Model.Items.Count == 0)
+{
+    <p class="empty" data-testid="todo-empty">Belum ada tugas.</p>
+}
+else
+{
+    <ul class="todos" data-testid="todo-list">
+        @foreach (var item in Model.Items)
+        {
+            <li class="@(item.Done ? "done" : "")" data-testid="todo-item">
+                <span class="title">@item.Title</span>
+                <form method="post" asp-page-handler="Toggle" asp-route-id="@item.Id" class="inline">
+                    <button type="submit" class="small">@(item.Done ? "Batal" : "Selesai")</button>
+                </form>
+                <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" class="inline">
+                    <button type="submit" class="small danger">Hapus</button>
+                </form>
+            </li>
+        }
+    </ul>
+    <p class="counter" data-testid="todo-counter">
+        @Model.Items.Count(i => !i.Done) dari @Model.Items.Count tugas belum selesai
+    </p>
+}

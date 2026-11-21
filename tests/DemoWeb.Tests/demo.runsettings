@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mode presentasi: browser terlihat (headed) dan setiap aksi diperlambat 500 ms -->
+<RunSettings>
+  <NUnit>
+    <NumberOfTestWorkers>1</NumberOfTestWorkers>
+  </NUnit>
+  <Playwright>
+    <BrowserName>chromium</BrowserName>
+    <LaunchOptions>
+      <!-- Pakai Microsoft Edge bawaan Windows (Chromium bundel Playwright gagal start di laptop ini) -->
+      <Channel>msedge</Channel>
+      <Headless>false</Headless>
+      <SlowMo>500</SlowMo>
+    </LaunchOptions>
+  </Playwright>
+</RunSettings>

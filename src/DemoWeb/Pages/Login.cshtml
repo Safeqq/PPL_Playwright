@@ -1,0 +1,23 @@
+@page
+@model LoginModel
+@{
+    ViewData["Title"] = "Masuk";
+}
+
+<h1>Masuk</h1>
+<p class="hint">Akun demo: <code>admin</code> / <code>admin123</code></p>
+
+@if (Model.ErrorMessage is not null)
+{
+    <div class="alert error" role="alert" data-testid="login-error">@Model.ErrorMessage</div>
+}
+
+<form method="post" class="form">
+    <label for="username">Username</label>
+    <input id="username" name="Username" value="@Model.Username" autocomplete="username" />
+
+    <label for="password">Password</label>
+    <input id="password" name="Password" type="password" autocomplete="current-password" />
+
+    <button type="submit">Masuk</button>
+</form>
