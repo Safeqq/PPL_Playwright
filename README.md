@@ -46,7 +46,7 @@ Browser   → aplikasi browsernya (misal Chrome). Lambat dibuka, jadi dibuka sek
 
 ---
 
-## 2. Persiapan (sekali saja)
+## 2. Persiapan
 
 Butuh **.NET SDK 8** atau lebih baru.
 
