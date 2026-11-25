@@ -5,16 +5,7 @@ using NUnit.Framework.Interfaces;
 
 namespace DemoWeb.Tests;
 
-// File ini berisi dua class "fondasi" (tidak ada test di sini):
-//   1. AppServer → berjalan SEKALI untuk semua test: menyalakan & mematikan web app
-//   2. BaseTest  → berjalan untuk SETIAP test: BaseURL, tracing, helper login
-// Sengaja tetap dua class karena waktu jalannya berbeda.
-
-/// <summary>
-/// Menjalankan aplikasi DemoWeb sekali sebelum semua test, lalu mematikannya setelah selesai.
-/// Jika aplikasi sudah berjalan (misal dijalankan manual), server tidak distart ulang.
-/// Set environment variable BASE_URL untuk menguji server lain.
-/// </summary>
+// Menyalakan web app DemoWeb SEKALI sebelum semua test, lalu mematikannya di akhir.
 [SetUpFixture]
 public class AppServer
 {
@@ -26,7 +17,7 @@ public class AppServer
     [OneTimeSetUp]
     public async Task StartAsync()
     {
-        if (await IsUpAsync()) return;
+        if (await IsUpAsync()) return; // sudah menyala (dijalankan manual)
 
         var projectDir = Path.Combine(FindRepoRoot(), "src", "DemoWeb");
         _process = Process.Start(new ProcessStartInfo
@@ -82,56 +73,30 @@ public class AppServer
     }
 }
 
-/// <summary>
-/// Kelas induk untuk semua test.
-///
-/// Rantai pewarisan dari paket Microsoft.Playwright.NUnit:
-///   PlaywrightTest  → menyediakan objek "Playwright" (pintu masuk ke semua browser)
-///   BrowserTest     → menyediakan "Browser" (satu proses browser, dipakai bersama)
-///   ContextTest     → menyediakan "Context" (BROWSER CONTEXT baru untuk SETIAP test)
-///   PageTest        → menyediakan "Page"    (satu tab di dalam context tersebut)
-///
-/// Artinya, setiap test otomatis mendapat "profil browser" yang bersih:
-/// cookie, session, localStorage kosong → test tidak saling mempengaruhi.
-///
-/// Jangan menaruh [Test] di sini: semua class turunan akan ikut mewarisi
-/// dan menjalankannya berulang kali.
-/// </summary>
+// Induk semua test. PageTest otomatis memberi Browser, Context, dan Page baru di SETIAP test.
+// Jangan menaruh [Test] di sini, karena akan ikut diwarisi semua class test.
 public abstract class BaseTest : PageTest
 {
-    /// <summary>
-    /// Pengaturan untuk browser context yang dibuat otomatis oleh PageTest.
-    /// </summary>
     public override BrowserNewContextOptions ContextOptions() => new()
     {
-        // Dengan BaseURL, test cukup menulis Page.GotoAsync("/Login")
-        BaseURL = AppServer.BaseUrl,
+        BaseURL = AppServer.BaseUrl, // cukup tulis GotoAsync("/Login")
         Locale = "id-ID",
         ViewportSize = new() { Width = 1280, Height = 720 },
     };
 
-    /// <summary>
-    /// TRACING: mulai merekam sebelum setiap test.
-    /// Trace berisi screenshot, snapshot DOM, request jaringan, log console,
-    /// dan baris kode sumber untuk SETIAP aksi.
-    /// </summary>
+    // Tracing: rekam setiap test, simpan .zip hanya kalau gagal
     [SetUp]
     public async Task MulaiTracingAsync()
     {
         await Context.Tracing.StartAsync(new()
         {
             Title = TestContext.CurrentContext.Test.Name,
-            Screenshots = true, // screenshot tiap aksi (filmstrip di trace viewer)
-            Snapshots = true,   // snapshot DOM sebelum/sesudah aksi (bisa di-inspect)
-            Sources = true,     // tampilkan baris kode C# yang menjalankan aksi
+            Screenshots = true,
+            Snapshots = true,
+            Sources = true,
         });
     }
 
-    /// <summary>
-    /// TRACING: hentikan rekaman setelah setiap test.
-    /// File .zip hanya disimpan kalau test GAGAL, supaya folder tidak penuh.
-    /// Buka dengan: playwright.ps1 show-trace traces/NamaTest.zip
-    /// </summary>
     [TearDown]
     public async Task HentikanTracingAsync()
     {
@@ -142,17 +107,14 @@ public abstract class BaseTest : PageTest
         });
     }
 
-    /// <summary>Folder penyimpanan trace: bin/Debug/net8.0/traces</summary>
     protected static string FolderTrace =>
         Path.Combine(TestContext.CurrentContext.WorkDirectory, "traces");
 
-    /// <summary>Langkah login yang dipakai berulang oleh banyak test.</summary>
     protected async Task LoginAsync(string username = "admin", string password = "admin123")
     {
         await LoginAsync(Page, username, password);
     }
 
-    /// <summary>Versi yang menerima page tertentu (dipakai di test multi-context).</summary>
     protected static async Task LoginAsync(IPage page, string username = "admin", string password = "admin123")
     {
         await page.GotoAsync("/Login");

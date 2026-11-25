@@ -2,13 +2,8 @@ using Microsoft.Playwright;
 
 namespace DemoWeb.Tests;
 
-/// <summary>
-/// AUTO-WAITING: Playwright otomatis menunggu elemen siap, jadi tidak perlu Thread.Sleep.
-///   - Aksi (Click, Fill) menunggu elemen terlihat, stabil, dan enabled.
-///   - Expect(...) memeriksa berulang sampai benar (batas default 5 detik).
-/// Kedua test memakai halaman /Lambat yang sengaja dibuat lambat.
-/// Jalankan: dotnet test --filter TestCategory=AutoWaiting
-/// </summary>
+// Auto-waiting: Playwright menunggu elemen siap tanpa Thread.Sleep.
+// Memakai halaman /Lambat yang sengaja dibuat lambat (±2 detik).
 [Category("AutoWaiting")]
 public class AutoWaitingTests : BaseTest
 {
@@ -18,11 +13,8 @@ public class AutoWaitingTests : BaseTest
         await Page.GotoAsync("/Lambat");
         var kirim = Page.GetByRole(AriaRole.Button, new() { Name = "Kirim" });
 
-        // Saat halaman baru dibuka, tombol masih disabled
         await Expect(kirim).ToBeDisabledAsync();
-
-        // ClickAsync menunggu sendiri sampai tombol aktif (±2 detik), baru mengklik
-        await kirim.ClickAsync();
+        await kirim.ClickAsync(); // menunggu sampai tombol aktif, baru klik
 
         await Expect(Page.GetByTestId("status-kirim")).ToHaveTextAsync("Terkirim!");
     }
@@ -35,11 +27,10 @@ public class AutoWaitingTests : BaseTest
 
         var produk = Page.GetByTestId("produk-list").GetByRole(AriaRole.Listitem);
 
-        // JEBAKAN: CountAsync tidak menunggu, hanya melihat kondisi saat ini.
-        // Data belum datang dari server, jadi hasilnya 0.
+        // CountAsync tidak menunggu → data belum datang
         Assert.That(await produk.CountAsync(), Is.EqualTo(0));
 
-        // Cara yang benar: Expect mencoba ulang sampai data muncul
+        // Expect mencoba ulang sampai data muncul
         await Expect(produk).ToHaveTextAsync(new[] { "Laptop", "Mouse", "Keyboard" });
     }
 }

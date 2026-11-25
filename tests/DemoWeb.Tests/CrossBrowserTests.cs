@@ -4,17 +4,8 @@ using Microsoft.Playwright.NUnit;
 
 namespace DemoWeb.Tests;
 
-/// <summary>
-/// CROSS-BROWSER: satu kode test, beberapa browser.
-///   chromium → Chrome/Edge, firefox → Firefox, webkit → Safari
-///
-/// Cara 1: seluruh test dipindah ke browser lain tanpa mengubah kode:
-///   dotnet test -- Playwright.BrowserName=webkit
-/// Cara 2 (di bawah): satu test dijalankan di tiap browser lewat [TestCase].
-///
-/// Jalankan: dotnet test --filter TestCategory=CrossBrowser
-/// Browser terlihat: $env:HEADED="1"; dotnet test --filter TestCategory=CrossBrowser
-/// </summary>
+// Cross-browser: test yang sama dijalankan di beberapa browser.
+// Browser terlihat: $env:HEADED="1"; dotnet test --filter TestCategory=CrossBrowser
 [Category("CrossBrowser")]
 public class CrossBrowserTests : PlaywrightTest
 {
@@ -24,18 +15,15 @@ public class CrossBrowserTests : PlaywrightTest
     [TestCase("msedge")]
     public async Task X01_LoginDiSemuaBrowser(string namaBrowser)
     {
-        // 1. Buka browser sesuai parameter
         await using var browser = await BukaBrowserAsync(namaBrowser);
         var page = await browser.NewPageAsync(new() { BaseURL = AppServer.BaseUrl });
 
-        // 2. Langkah test sama persis untuk semua browser
         await page.GotoAsync("/Login");
         await page.GetByLabel("Username").FillAsync("admin");
         await page.GetByLabel("Password").FillAsync("admin123");
         await page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
         await Expect(page).ToHaveURLAsync(new Regex("/Todo$"));
 
-        // 3. Cetak versi browser sebagai bukti browsernya memang berbeda
         TestContext.Out.WriteLine($"{namaBrowser} versi {browser.Version}");
     }
 
@@ -48,15 +36,14 @@ public class CrossBrowserTests : PlaywrightTest
         {
             if (namaBrowser == "msedge")
             {
-                // Edge memakai mesin chromium, dengan Edge yang terpasang di Windows
-                opsi.Channel = "msedge";
+                opsi.Channel = "msedge"; // Edge = mesin chromium
                 return await Playwright.Chromium.LaunchAsync(opsi);
             }
             return await Playwright[namaBrowser].LaunchAsync(opsi);
         }
         catch (PlaywrightException e) when (e.Message.Contains("spawn UNKNOWN") || e.Message.Contains("Executable doesn't exist"))
         {
-            // Browser tidak bisa dijalankan di komputer ini → "Inconclusive", bukan gagal
+            // Masalah komputer, bukan aplikasi → Inconclusive
             Assert.Inconclusive($"{namaBrowser} tidak bisa dijalankan di komputer ini");
             throw;
         }

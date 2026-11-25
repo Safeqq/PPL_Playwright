@@ -78,7 +78,7 @@ Menjalankan dengan browser **terlihat** dan setiap aksi diperlambat 500 ms:
 dotnet test -s tests/DemoWeb.Tests/demo.runsettings
 ```
 
-Menjalankan satu topik saja (kategori: `Dasar`, `Locators`, `AutoWaiting`, `BrowserContexts`, `Tracing`, `CrossBrowser`):
+Menjalankan satu topik saja (kategori: `Locators`, `AutoWaiting`, `BrowserContexts`, `Tracing`, `CrossBrowser`):
 ```bash
 dotnet test -s tests/DemoWeb.Tests/demo.runsettings --filter TestCategory=Locators
 ```
@@ -87,7 +87,7 @@ dotnet test -s tests/DemoWeb.Tests/demo.runsettings --filter TestCategory=Locato
 
 1. .NET mem-*build* web app dan project test.
 2. **NUnit** mencari semua method bertanda `[Test]`.
-3. Sebelum test pertama, `AppServer.cs` menyalakan web app di `http://localhost:5123`.
+3. Sebelum test pertama, class `AppServer` (di `BaseTest.cs`) menyalakan web app di `http://localhost:5123`.
 4. Untuk **setiap** test:
    - Playwright membuat context dan tab baru yang bersih.
    - `BaseTest.cs` mulai merekam trace.
@@ -123,9 +123,7 @@ Atribut seperti `data-testid="current-user"` dan `<label for="username">` di HTM
 | File | Fungsi |
 |---|---|
 | `DemoWeb.Tests.csproj` | Paket yang dipakai: **NUnit** (framework test) dan **Microsoft.Playwright.NUnit** (Playwright + integrasinya dengan NUnit) |
-| `AppServer.cs` | Menyalakan web app sebelum semua test dan mematikannya di akhir |
-| `BaseTest.cs` | Kelas induk semua test: `BaseURL`, rekam trace (disimpan kalau gagal), dan helper `LoginAsync()` |
-| `DasarTests.cs` | 1 test login: bentuk paling dasar sebuah test |
+| `BaseTest.cs` | **Setup**, berisi dua class: **`AppServer`** (menyalakan web app sekali sebelum semua test dan mematikannya di akhir) dan **`BaseTest`** (kelas induk semua test: `BaseURL`, rekam trace yang disimpan kalau gagal, dan helper `LoginAsync()`) |
 | `LocatorTests.cs` | 3 test: jenis-jenis locator, filter + rangkai, strict mode |
 | `AutoWaitingTests.cs` | 2 test di halaman `/Lambat`: menunggu otomatis tanpa `Sleep` |
 | `BrowserContextTests.cs` | 2 test: dua context tidak berbagi login, dua tab dalam satu context berbagi login |
@@ -138,7 +136,6 @@ Atribut seperti `data-testid="current-user"` dan `<label for="username">` di HTM
 ```
 PageTest (dari Playwright)      → otomatis menyediakan Browser, Context, Page
   └ BaseTest (buatan sendiri)   → + BaseURL, tracing, LoginAsync
-      ├ DasarTests
       ├ LocatorTests
       ├ AutoWaitingTests
       ├ BrowserContextTests
@@ -150,42 +147,38 @@ PlaywrightTest (dari Playwright) → hanya menyediakan "Playwright", tanpa Page 
 
 ---
 
-## 5. Membedah Satu Test
+## 5. Pola Dasar Sebuah Test (AAA)
 
-Isi `DasarTests.cs`:
+Semua test di project ini mengikuti pola **Arrange – Act – Assert**: siapkan kondisi, lakukan aksi, periksa hasil. Contoh ilustrasinya (alur login; versi lengkapnya ada di test L01 `LocatorTests.cs`):
 
 ```csharp
-[Category("Dasar")]                       // ①
-public class DasarTests : BaseTest        // ②
+[Category("Locators")]                    // ① label kategori
+public class LocatorTests : BaseTest      // ② mewarisi BaseTest → Page sudah tersedia
 {
-    [Test]                                // ③
+    [Test]                                // ③ penanda test case untuk NUnit
     public async Task Login_DenganAkunBenar_MasukKeHalamanTodo()   // ④
     {
-        await Page.GotoAsync("/Login");                            // ⑤
+        await Page.GotoAsync("/Login");                            // Arrange
 
-        await Page.GetByLabel("Username").FillAsync("admin");      // ⑥
+        await Page.GetByLabel("Username").FillAsync("admin");      // Act
         await Page.GetByLabel("Password").FillAsync("admin123");
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();  // ⑦
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Masuk" }).ClickAsync();
 
-        await Expect(Page).ToHaveURLAsync(new Regex("/Todo$"));    // ⑧
-        await Expect(Page.GetByTestId("current-user")).ToHaveTextAsync("Halo, admin");  // ⑨
+        await Expect(Page).ToHaveURLAsync(new Regex("/Todo$"));    // Assert
+        await Expect(Page.GetByTestId("current-user")).ToHaveTextAsync("Halo, admin");
     }
 }
 ```
 
-| No | Penjelasan |
+| Bagian | Penjelasan |
 |---|---|
-| ① | Label kategori, supaya bisa dijalankan sendiri dengan `--filter TestCategory=Dasar` |
+| ① | Label kategori, supaya bisa dijalankan sendiri dengan `--filter TestCategory=Locators` |
 | ② | Mewarisi `BaseTest`, jadi `Page` sudah tersedia |
 | ③ | Memberi tahu NUnit bahwa method ini adalah test case |
 | ④ | Nama test menjelaskan **apa yang dites** dan **hasil yang diharapkan** |
-| ⑤ | Buka `http://localhost:5123/Login` (BaseURL + "/Login") |
-| ⑥ | `GetByLabel("Username")` adalah **locator**: "cari input berlabel Username". `FillAsync` mengetik ke input itu |
-| ⑦ | "Cari **tombol** bertuliskan Masuk", lalu klik. Playwright otomatis **menunggu** tombol siap sebelum mengklik |
-| ⑧ | **Pemeriksaan**: URL harus berakhiran `/Todo`. Kalau belum, dicoba ulang sampai 5 detik, baru dinyatakan gagal |
-| ⑨ | Teks di elemen `data-testid="current-user"` harus "Halo, admin" |
-
-Pola ⑤ → ⑥⑦ → ⑧⑨ disebut **Arrange – Act – Assert**: siapkan kondisi, lakukan aksi, periksa hasil. Semua test di project ini mengikuti pola tersebut.
+| Arrange | Buka `http://localhost:5123/Login` (BaseURL + "/Login") |
+| Act | `GetByLabel` dan `GetByRole` adalah **locator**. `FillAsync` mengetik, `ClickAsync` mengklik. Playwright otomatis **menunggu** elemen siap |
+| Assert | `Expect` memeriksa hasil. Kalau belum sesuai, dicoba ulang sampai 5 detik, baru dinyatakan gagal |
 
 ---
 
@@ -243,11 +236,11 @@ powershell -ExecutionPolicy Bypass -File tests/DemoWeb.Tests/bin/Debug/net8.0/pl
 ## 7. Urutan Belajar yang Disarankan
 
 1. Jalankan web app dan coba klik-klik sendiri, supaya tahu apa yang akan dites.
-2. Baca `DasarTests.cs`, lalu jalankan dengan browser terlihat:
+2. Baca `LocatorTests.cs` (test L01 berisi alur login lengkap), lalu jalankan dengan browser terlihat:
    ```bash
-   dotnet test -s tests/DemoWeb.Tests/demo.runsettings --filter TestCategory=Dasar
+   dotnet test -s tests/DemoWeb.Tests/demo.runsettings --filter TestCategory=Locators
    ```
-3. Rusak test-nya dengan sengaja (misal ganti `"Halo, admin"` jadi `"Halo, budi"`), jalankan lagi, lalu baca pesan error-nya.
+3. Rusak test-nya dengan sengaja (misal ganti `"Halo, admin"` di L01 jadi `"Halo, budi"`), jalankan lagi, lalu baca pesan error-nya.
 4. Lanjut berurutan: Locators → Auto-waiting → Browser Contexts → Tracing → Cross-browser. Setiap file sudah diberi komentar di setiap langkah.
 
 ---
